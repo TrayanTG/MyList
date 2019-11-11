@@ -132,18 +132,34 @@ public:
 
     reference front()
     {
+        if constexpr (check)
+        {
+            if(empty())throw logic_error("List is empty!");
+        }
         return *begin();
     }
     const_reference front()const
     {
+        if constexpr (check)
+        {
+            if(empty())throw logic_error("List is empty!");
+        }
         return *begin();
     }
     reference back()
     {
+        if constexpr (check)
+        {
+            if(empty())throw logic_error("List is empty!");
+        }
         return *end().curr->prev->data;
     }
     const_reference back()const
     {
+        if constexpr (check)
+        {
+            if(empty())throw logic_error("List is empty!");
+        }
         return *end().curr->prev->data;
     }
 
@@ -151,48 +167,48 @@ public:
     {
         return iterator(itFront);
     }
-    const_iterator begin()const noexcept
+    const_iterator begin()const
     {
         return const_iterator(itFront);
     }
-    const_iterator cbegin()const noexcept
+    const_iterator cbegin()const
     {
         return const_iterator(itFront);
     }
-    iterator end()noexcept
+    iterator end()
     {
         return iterator(itBack);
     }
-    const_iterator end()const noexcept
+    const_iterator end()const
     {
         return const_iterator(itBack);
     }
-    const_iterator cend()const noexcept
+    const_iterator cend()const
     {
         return const_iterator(itBack);
     }
 
-    iterator rbegin()noexcept
+    reverse_iterator rbegin()
     {
         return reverse_iterator(end());
     }
-    const_iterator rbegin()const noexcept
+    const_reverse_iterator rbegin()const
     {
         return const_reverse_iterator(end());
     }
-    const_iterator crbegin()const noexcept
+    const_reverse_iterator crbegin()const
     {
         return const_reverse_iterator(end());
     }
-    iterator rend()noexcept
+    reverse_iterator rend()
     {
         return reverse_iterator(begin());
     }
-    const_iterator rend()const noexcept
+    const_reverse_iterator rend()const
     {
         return const_reverse_iterator(begin());
     }
-    const_iterator crend()const noexcept
+    const_reverse_iterator crend()const
     {
         return const_reverse_iterator(begin());
     }
@@ -213,7 +229,7 @@ public:
         Node<T, check> *newNode = new Node<T, check>(value, nullptr, pos.curr);
         if(!empty()) newNode->prev = pos.curr->prev;
         pos.curr->prev = newNode;
-        if(pos.curr == itFront.curr) --itFront;
+        if(pos == itFront) --itFront;
         sz++;
         return iterator(newNode);
     }
@@ -222,18 +238,32 @@ public:
         Node<T, check> *newNode = new Node<T, check>(move(value), nullptr, pos.curr);
         if(!empty()) newNode->prev = pos.curr->prev;
         pos.curr->prev = newNode;
-        if(pos.curr == itFront.curr) --itFront;
+        if(pos == itFront) --itFront;
         sz++;
         return iterator(newNode);
     }
     template<typename InputIt>
-    void insert(iterator pos, InputIt first, InputIt last);
-    template<typename InputIt>
     iterator insert(const_iterator pos, InputIt first, InputIt last);
 
-    iterator erase(iterator pos);
-    iterator erase(const_iterator pos);
-    iterator erase(iterator first, iterator last);
+    iterator erase(const_iterator pos)
+    {
+        if constexpr (check)
+        {
+            if(empty())throw logic_error("Invalid element to be erased!");
+            if(pos == end()) throw logic_error("Cannot remove the end() element!");
+        }
+        if(pos == itFront)
+        {
+            itFront++;
+            itFront.curr->prev = nullptr;
+        }
+        else
+        {
+            pos.curr->next->prev = pos.curr->prev;
+            pos.curr->prev->next = pos.curr->next;
+        }
+        delete pos.curr;
+    }
     iterator erase(const_iterator first, const_iterator last);
 
     void push_back(const T& value);
@@ -285,14 +315,24 @@ bool operator>=( const List<T>& lhs, const List<T>& rhs );
 int main()
 {
     List<int> a;
-    a.insert(a.begin(), 7);
     a.insert(a.begin(), 8);
-    try{
+    a.insert(a.begin(), 7);
+    a.insert(a.begin(), 6);
+    a.insert(a.begin(), 5);
+    a.insert(a.begin(), 4);
+    a.insert(a.begin(), 3);
+    a.insert(a.begin(), 2);
+    a.erase(a.begin());
+    a.erase(--(--a.end()));
 
-    cout<<a.front()<<endl;
-    cout<<a.back()<<endl;
+    try
+    {
+        for(auto &&it: a)
+            cout<<it<<endl;
 
-    }catch(exception &e)
+
+    }
+    catch(exception &e)
     {
         cout<<e.what()<<endl;
     }
