@@ -360,13 +360,41 @@ public:
         return iterator(first.curr); /// Not tested
     }
 
-    void push_back(const T& value);
-    void push_back(T&& value);
-    void pop_back();
+    void push_back(const T& value)
+    {
+        if(empty()) insert(begin(), value);
+        else insert(end(), value);
+    }
+    void push_back(T&& value)
+    {
+        if(empty()) insert(begin(), value);
+        else insert(end(), value);
+    }
+    void pop_back()
+    {
+        if constexpr (check)
+        {
+            if(empty()) throw logic_error("Popping from an empty list!");
+        }
+        erase(--end());
+    }
 
-    void push_front(const T& value);
-    void push_front(T&& value);
-    void pop_front();
+    void push_front(const T& value)
+    {
+        insert(begin(), value);
+    }
+    void push_front(T&& value)
+    {
+        insert(begin(), value);
+    }
+    void pop_front()
+    {
+        if constexpr (check)
+        {
+            if(empty()) throw logic_error("Popping from an empty list!");
+        }
+        erase(begin());
+    }
 
     template <typename Compare = less<T> >
     void merge(List& other, Compare comp);
@@ -409,13 +437,19 @@ bool operator>=( const List<T>& lhs, const List<T>& rhs );
 int main()
 {
     List<int> a, b;
-    a.insert(a.begin(), 8);
-    a.insert(a.begin(), 7);
-    a.insert(a.begin(), 6);
-    a.insert(a.begin(), 5);
-    a.insert(a.begin(), 4);
-    a.insert(a.begin(), 3);
-    a.insert(a.begin(), 2);
+    a.push_front(27);
+    a.push_back(1);
+    a.push_back(2);
+    a.push_back(3);
+    a.push_back(4);
+    a.push_back(5);
+    a.push_back(6);
+    a.push_back(7);
+    a.push_back(8);
+    //a.pop_back();
+    //a.pop_front();
+    a.push_front(17);
+
 
     b.insert(b.begin(), 10);
     b.insert(b.begin(), 11);
