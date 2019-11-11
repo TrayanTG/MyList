@@ -109,7 +109,10 @@ class List
     size_t sz;
     Iterator<T, T*, T&, check> itFront, itBack;
 
-    void copyList(const List<T, check> &other);
+    void copyList(const List<T, check> &other)
+    {
+        insert(begin(), other.begin(), other.end());
+    }
 
 public:
     typedef T value_type;
@@ -130,15 +133,58 @@ public:
         itBack = itFront;
     }
     template<typename InputIt>
-    List(InputIt first, InputIt last);
-    List(const List& other);
-    List(List&& other);
+    List(InputIt first, InputIt last): sz(0)
+    {
+        itFront.curr = new Node<T, check>;
+        itBack = itFront;
+        insert(begin(), first, last);
+    }
+    List(const List& other): sz(0)
+    {
+        if constexpr (check)
+        {
+            if(other.itFront == other.itBack && !other.empty()) throw logic_error("Copy constructor called with bad list object");
+        }
+        itFront.curr = new Node<T, check>;
+        itBack = itFront;
+        copyList(other);
+    }
+    List(List&& other): sz(other.sz)
+    {
+        if constexpr (check)
+        {
+            if(other.itFront == other.itBack && !other.empty()) throw logic_error("Move constructor called with bad list object");
+        }
+        itFront = other.itFront;
+        itBack = other.itBack;
+        other.itFront.curr = new Node<T, check>;
+        other.itBack = other.itFront;
+    }
     ~List()
     {
         clear();
     }
-    List& operator=(const List& other);
-    List& operator=(List&& other);
+    List& operator=(const List& other)
+    {
+        if(this == &other) return *this;
+        clear();
+        copyList(other);
+        return *this;
+    }
+    List& operator=(List&& other)
+    {
+        if constexpr (check)
+        {
+            if(this == &other) throw logic_error("Object being moved to itself!");
+        }
+        if(!empty()) clear();
+        delete itFront.curr;
+        sz = other.sz;
+        itFront = other.itFront;
+        itBack = other.itBack;
+        other.itFront.curr = new Node<T, check>;
+        other.itBack = other.itFront;
+    }
 
     reference front()
     {
@@ -379,9 +425,10 @@ int main()
     b.insert(b.begin(), 15);
     b.insert(b.begin(), 16);
 
-    for(auto &&it: a) cout<<it<<' ';cout<<endl;
-    for(auto &&it: b) cout<<it<<' ';cout<<endl;
+    for(auto &&it: a) cout<<it<<' ';
     cout<<endl;
+    for(auto &&it: b) cout<<it<<' ';
+    cout<<endl<<endl;
 
 
 
