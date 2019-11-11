@@ -73,19 +73,26 @@ public:
         curr=curr->prev;
         return *this;
     }
-    Iterator& operator++(int)
+    Iterator operator++(int)
     {
         Iterator temp = *this;
         ++(*this);
         return temp;
     }
-    Iterator& operator--(int)
+    Iterator operator--(int)
     {
         Iterator temp = *this;
         --(*this);
         return temp;
     }
-    Ref operator*() {return *curr->data;}
+    Ref operator*()
+    {
+        if constexpr (check)
+        {
+            if(curr->data == nullptr) throw logic_error("Called operator* for an invalid iterator");
+        }
+        return *curr->data;
+    }
     Ptr operator->() {return &(**this);}
     operator Iterator<T, const T*, const T&, check>() const
     {
@@ -126,7 +133,10 @@ public:
     List(InputIt first, InputIt last);
     List(const List& other);
     List(List&& other);
-    //~List();
+    ~List()
+    {
+        clear();
+    }
     List& operator=(const List& other);
     List& operator=(List&& other);
 
@@ -222,14 +232,24 @@ public:
         return sz;
     }
 
-    void clear();
+    void clear()
+    {
+        erase(begin(), end());
+    }
 
     iterator insert(const_iterator pos, const T& value)
     {
         Node<T, check> *newNode = new Node<T, check>(value, nullptr, pos.curr);
         if(!empty()) newNode->prev = pos.curr->prev;
-        pos.curr->prev = newNode;
-        if(pos == itFront) --itFront;
+        if(pos == itFront)
+        {
+            pos.curr->prev = newNode;            --itFront;
+        }
+        else
+        {
+            pos.curr->prev->next = newNode;
+            pos.curr->prev = newNode;
+        }
         sz++;
         return iterator(newNode);
     }
@@ -237,13 +257,30 @@ public:
     {
         Node<T, check> *newNode = new Node<T, check>(move(value), nullptr, pos.curr);
         if(!empty()) newNode->prev = pos.curr->prev;
-        pos.curr->prev = newNode;
-        if(pos == itFront) --itFront;
+        if(pos == itFront)
+        {
+            pos.curr->prev = newNode;            --itFront;
+        }
+        else
+        {
+            pos.curr->prev->next = newNode;
+            pos.curr->prev = newNode;
+        }
         sz++;
         return iterator(newNode);
     }
     template<typename InputIt>
-    iterator insert(const_iterator pos, InputIt first, InputIt last);
+    iterator insert(const_iterator pos, InputIt first, InputIt last)
+    {
+        if(first == last) return iterator(pos.curr);
+        auto it = insert(pos, *first++);
+        pos = it++;
+        while(first!=last)
+        {
+            it = ++insert(it, *first++);
+        }
+        return iterator(pos.curr);
+    }
 
     iterator erase(const_iterator pos)
     {
@@ -262,9 +299,20 @@ public:
             pos.curr->next->prev = pos.curr->prev;
             pos.curr->prev->next = pos.curr->next;
         }
+        sz--;
+        auto t=pos.curr->next;
         delete pos.curr;
+        return iterator(t); /// Not tested
     }
-    iterator erase(const_iterator first, const_iterator last);
+    iterator erase(const_iterator first, const_iterator last)
+    {
+        while(first != last)
+        {
+            auto t = first++;
+            erase(t);
+        }
+        return iterator(first.curr); /// Not tested
+    }
 
     void push_back(const T& value);
     void push_back(T&& value);
@@ -314,7 +362,7 @@ bool operator>=( const List<T>& lhs, const List<T>& rhs );
 
 int main()
 {
-    List<int> a;
+    List<int> a, b;
     a.insert(a.begin(), 8);
     a.insert(a.begin(), 7);
     a.insert(a.begin(), 6);
@@ -322,14 +370,28 @@ int main()
     a.insert(a.begin(), 4);
     a.insert(a.begin(), 3);
     a.insert(a.begin(), 2);
-    a.erase(a.begin());
-    a.erase(--(--a.end()));
+
+    b.insert(b.begin(), 10);
+    b.insert(b.begin(), 11);
+    b.insert(b.begin(), 12);
+    b.insert(b.begin(), 13);
+    b.insert(b.begin(), 14);
+    b.insert(b.begin(), 15);
+    b.insert(b.begin(), 16);
+
+    for(auto &&it: a) cout<<it<<' ';cout<<endl;
+    for(auto &&it: b) cout<<it<<' ';cout<<endl;
+    cout<<endl;
+
+
 
     try
     {
-        for(auto &&it: a)
-            cout<<it<<endl;
+        cout<<"here: "<<*a.insert(++++a.begin(), ++b.begin(), b.end())<<endl;
 
+        for(auto &&it: a)
+            cout<<it<<' ';
+        cout<<endl<<a.size()<<endl;
 
     }
     catch(exception &e)
