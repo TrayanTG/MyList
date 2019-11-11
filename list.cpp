@@ -397,9 +397,30 @@ public:
     }
 
     template <typename Compare = less<T> >
-    void merge(List& other, Compare comp);
-    template <class Compare = less<T> >
-    void merge(List&& other, Compare comp);
+    void merge(List& other, Compare comp = Compare())
+    {
+        merge(move(other));
+    }
+    template <typename Compare = less<T> >
+    void merge(List&& other, Compare comp = Compare())
+    {
+        auto it = begin();
+        auto it2 = other.begin();
+        while(it != end() && it2 != other.end())
+        {
+            if(comp(*it2, *it))
+            {
+                insert(it, move(*it2++));
+            }
+            else ++it;
+        }
+        while(it2 != other.end())
+        {
+            push_back(move(*it2++));
+        }
+        other.clear();
+        other.sz=0;
+    }
 
     void splice(const_iterator pos, List& other);
     void splice(const_iterator pos, List&& other);
@@ -437,27 +458,19 @@ bool operator>=( const List<T>& lhs, const List<T>& rhs );
 int main()
 {
     List<int> a, b;
-    a.push_front(27);
     a.push_back(1);
     a.push_back(2);
-    a.push_back(3);
     a.push_back(4);
     a.push_back(5);
-    a.push_back(6);
-    a.push_back(7);
     a.push_back(8);
-    //a.pop_back();
-    //a.pop_front();
-    a.push_front(17);
+    a.push_back(8);
 
-
-    b.insert(b.begin(), 10);
-    b.insert(b.begin(), 11);
-    b.insert(b.begin(), 12);
-    b.insert(b.begin(), 13);
-    b.insert(b.begin(), 14);
-    b.insert(b.begin(), 15);
-    b.insert(b.begin(), 16);
+    b.push_back(0);
+    b.push_back(1);
+    b.push_back(3);
+    b.push_back(5);
+    b.push_back(6);
+    b.push_back(7);
 
     for(auto &&it: a) cout<<it<<' ';
     cout<<endl;
@@ -468,11 +481,12 @@ int main()
 
     try
     {
-        cout<<"here: "<<*a.insert(++++a.begin(), ++b.begin(), b.end())<<endl;
-
-        for(auto &&it: a)
+        a.merge(b);
+        b.push_back(2);
+        b.push_back(3);
+        for(auto &&it: b)
             cout<<it<<' ';
-        cout<<endl<<a.size()<<endl;
+        cout<<endl<<b.size()<<endl;
 
     }
     catch(exception &e)
