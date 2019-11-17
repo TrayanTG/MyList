@@ -2,7 +2,7 @@
 #include <iterator>
 using namespace std;
 
-template<typename T, bool check>
+template<typename T, bool debugMod>
 struct Node
 {
     T *data;
@@ -21,7 +21,7 @@ struct Node
     {
         if(other.data) data = new T(*other.data);
     }
-    Node<T, check>& operator=(const Node &other)
+    Node<T, debugMod>& operator=(const Node &other)
     {
         if(this == &other) return *this;
         prev = other.prev;
@@ -31,9 +31,9 @@ struct Node
         else data = nullptr;
         return *this;
     }
-    Node<T, check>& operator=(Node &&other)
+    Node<T, debugMod>& operator=(Node &&other)
     {
-        if constexpr (check)
+        if constexpr (debugMod)
         {
             if(this == &other) throw logic_error("Cannot use move assignment operator to itself!");
         }
@@ -49,10 +49,10 @@ struct Node
     }
 };
 
-template<typename T, typename Ptr, typename Ref, bool check>
+template<typename T, typename Ptr, typename Ref, bool debugMod>
 class Iterator: public iterator<bidirectional_iterator_tag, T, ptrdiff_t, Ptr, Ref>
 {
-    Node<T, check> *curr;
+    Node<T, debugMod> *curr;
 public:
     //typedef bidirectional_iterator_tag iterator_category;
     //typedef T value_type;
@@ -60,7 +60,7 @@ public:
     //typedef Ptr pointer;
     //typedef Ref reference;
     template<typename, bool> friend class List;
-    Iterator(Node<T, check> *curr = nullptr): curr(curr) {}
+    Iterator(Node<T, debugMod> *curr = nullptr): curr(curr) {}
     bool operator!=(const Iterator &other)const {return curr!=other.curr;}
     bool operator==(const Iterator &other)const {return curr==other.curr;}
     Iterator& operator++()
@@ -87,29 +87,29 @@ public:
     }
     Ref operator*()
     {
-        if constexpr (check)
+        if constexpr (debugMod)
         {
             if(curr->data == nullptr) throw logic_error("Called operator* for an invalid iterator");
         }
         return *curr->data;
     }
     Ptr operator->() {return &(**this);}
-    operator Iterator<T, const T*, const T&, check>() const
+    operator Iterator<T, const T*, const T&, debugMod>() const
     {
         return {curr};
     }
 };
 
-template<typename T, bool check = true>
+template<typename T, bool debugMod = true>
 class List
 {
     static_assert(!is_const<T>::value, "List template member cannot be constant!");
     static_assert(!is_reference<T>::value, "List template member cannot be reference!");
 
     size_t sz;
-    Iterator<T, T*, T&, check> itFront, itBack;
+    Iterator<T, T*, T&, debugMod> itFront, itBack;
 
-    void copyList(const List<T, check> &other)
+    void copyList(const List<T, debugMod> &other)
     {
         insert(begin(), other.begin(), other.end());
     }
@@ -122,42 +122,42 @@ public:
     typedef const T& const_reference;
     typedef T* pointer;
     typedef const T* const_pointer;
-    typedef Iterator<T, T*, T&, check> iterator;
-    typedef Iterator<T, const T*, const T&, check> const_iterator;
+    typedef Iterator<T, T*, T&, debugMod> iterator;
+    typedef Iterator<T, const T*, const T&, debugMod> const_iterator;
     typedef std::reverse_iterator<iterator> reverse_iterator;
     typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
 
     List(): sz(0)
     {
-        itFront.curr = new Node<T, check>;
+        itFront.curr = new Node<T, debugMod>;
         itBack = itFront;
     }
     template<typename InputIt>
     List(InputIt first, InputIt last): sz(0)
     {
-        itFront.curr = new Node<T, check>;
+        itFront.curr = new Node<T, debugMod>;
         itBack = itFront;
         insert(begin(), first, last);
     }
     List(const List& other): sz(0)
     {
-        if constexpr (check)
+        if constexpr (debugMod)
         {
             if(other.itFront == other.itBack && !other.empty()) throw logic_error("Copy constructor called with bad list object");
         }
-        itFront.curr = new Node<T, check>;
+        itFront.curr = new Node<T, debugMod>;
         itBack = itFront;
         copyList(other);
     }
     List(List&& other): sz(other.sz)
     {
-        if constexpr (check)
+        if constexpr (debugMod)
         {
             if(other.itFront == other.itBack && !other.empty()) throw logic_error("Move constructor called with bad list object");
         }
         itFront = other.itFront;
         itBack = other.itBack;
-        other.itFront.curr = new Node<T, check>;
+        other.itFront.curr = new Node<T, debugMod>;
         other.itBack = other.itFront;
     }
     ~List()
@@ -173,7 +173,7 @@ public:
     }
     List& operator=(List&& other)
     {
-        if constexpr (check)
+        if constexpr (debugMod)
         {
             if(this == &other) throw logic_error("Object being moved to itself!");
         }
@@ -182,13 +182,13 @@ public:
         sz = other.sz;
         itFront = other.itFront;
         itBack = other.itBack;
-        other.itFront.curr = new Node<T, check>;
+        other.itFront.curr = new Node<T, debugMod>;
         other.itBack = other.itFront;
     }
 
     reference front()
     {
-        if constexpr (check)
+        if constexpr (debugMod)
         {
             if(empty())throw logic_error("List is empty!");
         }
@@ -196,7 +196,7 @@ public:
     }
     const_reference front()const
     {
-        if constexpr (check)
+        if constexpr (debugMod)
         {
             if(empty())throw logic_error("List is empty!");
         }
@@ -204,7 +204,7 @@ public:
     }
     reference back()
     {
-        if constexpr (check)
+        if constexpr (debugMod)
         {
             if(empty())throw logic_error("List is empty!");
         }
@@ -212,7 +212,7 @@ public:
     }
     const_reference back()const
     {
-        if constexpr (check)
+        if constexpr (debugMod)
         {
             if(empty())throw logic_error("List is empty!");
         }
@@ -285,7 +285,7 @@ public:
 
     iterator insert(const_iterator pos, const T& value)
     {
-        Node<T, check> *newNode = new Node<T, check>(value, nullptr, pos.curr);
+        Node<T, debugMod> *newNode = new Node<T, debugMod>(value, nullptr, pos.curr);
         if(!empty()) newNode->prev = pos.curr->prev;
         if(pos == itFront)
         {
@@ -302,7 +302,7 @@ public:
     }
     iterator insert(const_iterator pos, T&& value)
     {
-        Node<T, check> *newNode = new Node<T, check>(move(value), nullptr, pos.curr);
+        Node<T, debugMod> *newNode = new Node<T, debugMod>(move(value), nullptr, pos.curr);
         if(!empty()) newNode->prev = pos.curr->prev;
         if(pos == itFront)
         {
@@ -332,7 +332,7 @@ public:
 
     iterator erase(const_iterator pos)
     {
-        if constexpr (check)
+        if constexpr (debugMod)
         {
             if(empty())throw logic_error("Invalid element to be erased!");
             if(pos == end()) throw logic_error("Cannot remove the end() element!");
@@ -374,7 +374,7 @@ public:
     }
     void pop_back()
     {
-        if constexpr (check)
+        if constexpr (debugMod)
         {
             if(empty()) throw logic_error("Popping from an empty list!");
         }
@@ -391,7 +391,7 @@ public:
     }
     void pop_front()
     {
-        if constexpr (check)
+        if constexpr (debugMod)
         {
             if(empty()) throw logic_error("Popping from an empty list!");
         }
@@ -439,7 +439,7 @@ public:
     }
     void splice(const_iterator pos, List&& other, const_iterator it)
     {
-        if constexpr (check)
+        if constexpr (debugMod)
         {
             if(it == other.end()) throw logic_error("Cannot transfer end() of the list!");
         }
@@ -488,14 +488,15 @@ public:
         if(size()<2) return;
         auto it = begin();
         itFront = itBack.curr->prev;
+        itBack.curr->prev = it.curr;
         while(it!=end())
         {
             auto temp = it.curr->next;
             swap(it.curr->prev,it.curr->next);
-            if(it.curr->next == nullptr) it.curr->next = itBack.curr;
-            if(it.curr->prev == itBack.curr) it.curr->prev = nullptr;
             it = temp;
         }
+        itFront.curr->prev = nullptr;
+        itBack.curr->prev->next = itBack.curr;
     }
 
     template<typename BinaryPredicate = equal_to<T> >
@@ -514,49 +515,75 @@ public:
     void sort(Compare comp);
 };
 
-template<typename T>
-bool operator==( const List<T>& lhs, const List<T>& rhs );
-template<typename T>
-bool operator!=( const List<T>& lhs, const List<T>& rhs );
-template<typename T>
-bool operator<( const List<T>& lhs, const List<T>& rhs );
-template<typename T>
-bool operator<=( const List<T>& lhs, const List<T>& rhs );
-template<typename T>
-bool operator>( const List<T>& lhs, const List<T>& rhs );
-template<typename T>
-bool operator>=( const List<T>& lhs, const List<T>& rhs );
+template<typename T, bool debugMod>
+bool operator==( const List<T, debugMod>& lhs, const List<T, debugMod>& rhs )
+{
+    if(lhs.size()!=rhs.size()) return false;
+    auto it1=lhs.begin();
+    auto it2=rhs.begin();
+    while(it1!=lhs.end())
+    {
+        if(*it1++ != *it2++) return false;
+    }
+    return true;
+}
+template<typename T, bool debugMod>
+bool operator!=( const List<T, debugMod>& lhs, const List<T, debugMod>& rhs )
+{
+    return !(lhs==rhs);
+}
+template<typename T, bool debugMod>
+bool operator<( const List<T, debugMod>& lhs, const List<T, debugMod>& rhs )
+{
+    auto it1=lhs.begin();
+    auto it2=rhs.begin();
+    while(it1!=lhs.end() && it2!=rhs.end())
+    {
+        if(*it1++ < *it2++) return true;
+    }
+    return lhs.size()<rhs.size();
+}
+template<typename T, bool debugMod>
+bool operator<=( const List<T, debugMod>& lhs, const List<T, debugMod>& rhs )
+{
+    return !(rhs<lhs);
+}
+template<typename T, bool debugMod>
+bool operator>( const List<T, debugMod>& lhs, const List<T, debugMod>& rhs )
+{
+    return rhs<lhs;
+}
+template<typename T, bool debugMod>
+bool operator>=( const List<T, debugMod>& lhs, const List<T, debugMod>& rhs )
+{
+    return !(lhs<rhs);
+}
 
 int main()
 {
     List<int> a, b;
     a.push_back(1);
-    a.push_back(1);
     a.push_back(2);
     a.push_back(2);
     a.push_back(5);
     a.push_back(8);
-    a.push_back(8);
-    a.push_back(4);
-    a.push_back(8);
-    a.push_back(8);
+    a.push_back(9);
 
 
-
-    b.push_back(0);
     b.push_back(1);
-    b.push_back(3);
+    b.push_back(2);
+    b.push_back(2);
     b.push_back(5);
-    b.push_back(6);
-    b.push_back(7);
+    b.push_back(8);
+    b.push_back(8);
+
 
     for(auto &&it: a) cout<<it<<' ';
     cout<<endl;
     for(auto &&it: b) cout<<it<<' ';
     cout<<endl<<endl;
 
-    a.unique();
-
+    cout<<"here: "<<(a>=b)<<endl;
 
     for(auto &&it: a) cout<<it<<' ';
     cout<<endl;
@@ -583,7 +610,7 @@ int main()
 }
 
 /**
-if constexpr (check)
+if constexpr (debugMod)
     {
         if() throw;
     }
