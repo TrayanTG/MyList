@@ -223,48 +223,48 @@ public:
     {
         return iterator(itFront);
     }
-    const_iterator begin()const
+    const_iterator begin()const noexcept
     {
         return const_iterator(itFront);
     }
-    const_iterator cbegin()const
+    const_iterator cbegin()const noexcept
     {
         return const_iterator(itFront);
     }
-    iterator end()
+    iterator end() noexcept
     {
         return iterator(itBack);
     }
-    const_iterator end()const
+    const_iterator end()const noexcept
     {
         return const_iterator(itBack);
     }
-    const_iterator cend()const
+    const_iterator cend()const noexcept
     {
         return const_iterator(itBack);
     }
 
-    reverse_iterator rbegin()
+    reverse_iterator rbegin()noexcept
     {
         return reverse_iterator(end());
     }
-    const_reverse_iterator rbegin()const
+    const_reverse_iterator rbegin()const noexcept
     {
         return const_reverse_iterator(end());
     }
-    const_reverse_iterator crbegin()const
+    const_reverse_iterator crbegin()const noexcept
     {
         return const_reverse_iterator(end());
     }
-    reverse_iterator rend()
+    reverse_iterator rend()noexcept
     {
         return reverse_iterator(begin());
     }
-    const_reverse_iterator rend()const
+    const_reverse_iterator rend()const noexcept
     {
         return const_reverse_iterator(begin());
     }
-    const_reverse_iterator crend()const
+    const_reverse_iterator crend()const noexcept
     {
         return const_reverse_iterator(begin());
     }
@@ -289,7 +289,8 @@ public:
         if(!empty()) newNode->prev = pos.curr->prev;
         if(pos == itFront)
         {
-            pos.curr->prev = newNode;            --itFront;
+            pos.curr->prev = newNode;
+            --itFront;
         }
         else
         {
@@ -305,7 +306,8 @@ public:
         if(!empty()) newNode->prev = pos.curr->prev;
         if(pos == itFront)
         {
-            pos.curr->prev = newNode;            --itFront;
+            pos.curr->prev = newNode;
+            --itFront;
         }
         else
         {
@@ -404,6 +406,7 @@ public:
     template <typename Compare = less<T> >
     void merge(List&& other, Compare comp = Compare())
     {
+        if(this == &other) return;
         auto it = begin();
         auto it2 = other.begin();
         while(it != end() && it2 != other.end())
@@ -422,12 +425,48 @@ public:
         other.sz=0;
     }
 
-    void splice(const_iterator pos, List& other);
-    void splice(const_iterator pos, List&& other);
-    void splice(const_iterator pos, List& other, const_iterator it);
-    void splice(const_iterator pos, List&& other, const_iterator it);
-    void splice(const_iterator pos, List& other, const_iterator first, const_iterator last);
-    void splice(const_iterator pos, List&& other, const_iterator first, const_iterator last);
+    void splice(const_iterator pos, List& other)
+    {
+        splice(pos, move(other));
+    }
+    void splice(const_iterator pos, List&& other)
+    {
+        splice(pos, other, other.begin(), other.end());
+    }
+    void splice(const_iterator pos, List& other, const_iterator it)
+    {
+        splice(pos, move(other), it);
+    }
+    void splice(const_iterator pos, List&& other, const_iterator it)
+    {
+        if constexpr (check)
+        {
+            if(it == other.end()) throw logic_error("Cannot transfer end() of the list!");
+        }
+        if(it != other.begin()) it.curr->prev->next = it.curr->next;
+        else ++other.itFront; ///here
+        it.curr->next->prev = it.curr->prev;
+        if(pos != begin()) pos.curr->prev->next = it.curr;
+        else itFront.curr = it.curr;
+        it.curr->prev = pos.curr->prev;
+        it.curr->next = pos.curr;
+        pos.curr->prev = it.curr;
+
+        other.sz--;
+        sz++;
+    }
+    void splice(const_iterator pos, List& other, const_iterator first, const_iterator last)
+    {
+        splice(pos, move(other), first, last);
+    }
+    void splice(const_iterator pos, List&& other, const_iterator first, const_iterator last)
+    {
+        while(first!=last)
+        {
+            auto temp = first++;
+            splice(pos, other, temp);
+        }
+    }
 
     void remove(const T& value);
     template<typename UnaryPredicate>
@@ -477,11 +516,18 @@ int main()
     for(auto &&it: b) cout<<it<<' ';
     cout<<endl<<endl;
 
+    a.splice(--a.end(), b);
+
+    for(auto &&it: a) cout<<it<<' ';
+    cout<<endl;
+    for(auto &&it: b) cout<<it<<' ';
+    cout<<endl<<endl;
+
 
 
     try
     {
-        a.merge(b);
+        //a.merge(b);
         b.push_back(2);
         b.push_back(3);
         for(auto &&it: b)
