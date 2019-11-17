@@ -483,7 +483,20 @@ public:
         }
     }
 
-    void reverse() noexcept;
+    void reverse() noexcept
+    {
+        if(size()<2) return;
+        auto it = begin();
+        itFront = itBack.curr->prev;
+        while(it!=end())
+        {
+            auto temp = it.curr->next;
+            swap(it.curr->prev,it.curr->next);
+            if(it.curr->next == nullptr) it.curr->next = itBack.curr;
+            if(it.curr->prev == itBack.curr) it.curr->prev = nullptr;
+            it = temp;
+        }
+    }
 
     template<typename BinaryPredicate = equal_to<T> >
     void unique(BinaryPredicate p);
@@ -510,11 +523,11 @@ int main()
     List<int> a, b;
     a.push_back(1);
     a.push_back(2);
-    a.push_back(4);
+    /*a.push_back(4);
     a.push_back(5);
     a.push_back(8);
     a.push_back(8);
-    a.push_back(4);
+    a.push_back(4);*/
 
     b.push_back(0);
     b.push_back(1);
@@ -528,7 +541,8 @@ int main()
     for(auto &&it: b) cout<<it<<' ';
     cout<<endl<<endl;
 
-    a.remove(8);
+    a.reverse();
+
 
     for(auto &&it: a) cout<<it<<' ';
     cout<<endl;
