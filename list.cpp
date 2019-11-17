@@ -499,7 +499,16 @@ public:
     }
 
     template<typename BinaryPredicate = equal_to<T> >
-    void unique(BinaryPredicate p);
+    void unique(BinaryPredicate p = BinaryPredicate())
+    {
+        for(auto it=begin(); it!=end(); ++it)
+        {
+            while(it.curr->next != end().curr && *it.curr->data == *it.curr->next->data)
+            {
+                it = erase(it);
+            }
+        }
+    }
 
     template<typename Compare = less<T> >
     void sort(Compare comp);
@@ -522,12 +531,17 @@ int main()
 {
     List<int> a, b;
     a.push_back(1);
+    a.push_back(1);
     a.push_back(2);
-    /*a.push_back(4);
+    a.push_back(2);
     a.push_back(5);
     a.push_back(8);
     a.push_back(8);
-    a.push_back(4);*/
+    a.push_back(4);
+    a.push_back(8);
+    a.push_back(8);
+
+
 
     b.push_back(0);
     b.push_back(1);
@@ -541,7 +555,7 @@ int main()
     for(auto &&it: b) cout<<it<<' ';
     cout<<endl<<endl;
 
-    a.reverse();
+    a.unique();
 
 
     for(auto &&it: a) cout<<it<<' ';
