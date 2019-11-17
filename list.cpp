@@ -468,9 +468,20 @@ public:
         }
     }
 
-    void remove(const T& value);
+    void remove(const T& value)
+    {
+        remove_if([&](int n){ return n == value; });
+    }
     template<typename UnaryPredicate>
-    void remove_if(UnaryPredicate p);
+    void remove_if(UnaryPredicate p)
+    {
+        auto it=begin();
+        while(it!=end())
+        {
+            if(p(*it)) it = erase(it);
+            else ++it;
+        }
+    }
 
     void reverse() noexcept;
 
@@ -503,6 +514,7 @@ int main()
     a.push_back(5);
     a.push_back(8);
     a.push_back(8);
+    a.push_back(4);
 
     b.push_back(0);
     b.push_back(1);
@@ -516,7 +528,7 @@ int main()
     for(auto &&it: b) cout<<it<<' ';
     cout<<endl<<endl;
 
-    a.splice(--a.end(), b);
+    a.remove(8);
 
     for(auto &&it: a) cout<<it<<' ';
     cout<<endl;
