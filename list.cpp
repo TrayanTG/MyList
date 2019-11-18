@@ -94,6 +94,7 @@ public:
         return *curr->data;
     }
     Ptr operator->() {return &(**this);}
+    //List<int>::const_iterator it = (List<int>::const_iterator)a.begin();
     operator Iterator<T, const T*, const T&, debugMod>() const
     {
         return {curr};
@@ -114,7 +115,33 @@ class List
         insert(begin(), other.begin(), other.end());
     }
 
+    void boxSwapPtr(Iterator<T, const T*, const T&, debugMod> it1, Iterator<T, const T*, const T&, debugMod> it2) /// it1 < it2
+    {
+        if(it1==it2) return;
+        it2.curr->prev->next = it1.curr;
+        if(it1 == begin())itFront.curr = it2.curr;
+        else it1.curr->prev->next = it2.curr;
+        it2.curr->next->prev = it1.curr;
+        it1.curr->next->prev = it2.curr;
+        swap(it1.curr->next, it2.curr->next);
+        swap(it1.curr->prev, it2.curr->prev);
+    }
+
+    Iterator<T, T*, T&, debugMod> insertBoxBeforePtr(Iterator<T, const T*, const T&, debugMod> it1, Iterator<T, const T*, const T&, debugMod> it2)/// it1 < it2
+    {
+        if(it1==it2) return iterator(it1.curr);
+        it2.curr->prev->next = it2.curr->next;
+        it2.curr->next->prev = it2.curr->prev;
+        if(it1 == begin()) itFront.curr = it2.curr;
+        else it1.curr->prev->next = it2.curr;
+        it2.curr->prev = it1.curr->prev;
+        it1.curr->prev = it2.curr;
+        it2.curr->next = it1.curr;
+        return iterator(it2.curr);
+    }
+
 public:
+
     typedef T value_type;
     typedef size_t size_type;
     typedef ptrdiff_t difference_type;
@@ -512,7 +539,17 @@ public:
     }
 
     template<typename Compare = less<T> >
-    void sort(Compare comp);
+    void sort(Compare comp = Compare()) ///O(n^2) unfortunately
+    {
+        if(size()<2) return;
+        for(auto it = ++begin(); it != end(); ++it)
+        {
+            auto temp = it;
+            while((--temp).curr && comp(*it,*temp));
+            if(temp.curr) it = insertBoxBeforePtr(++temp, it);
+            else it = insertBoxBeforePtr(begin(), it);
+        }
+    }
 };
 
 template<typename T, bool debugMod>
@@ -562,12 +599,12 @@ bool operator>=( const List<T, debugMod>& lhs, const List<T, debugMod>& rhs )
 int main()
 {
     List<int> a, b;
-    a.push_back(1);
-    a.push_back(2);
-    a.push_back(2);
+    a.push_back(3);
     a.push_back(5);
-    a.push_back(8);
-    a.push_back(9);
+    a.push_back(1);
+    a.push_back(6);
+    a.push_back(5);
+    a.push_back(-2);
 
 
     b.push_back(1);
@@ -578,12 +615,13 @@ int main()
     b.push_back(8);
 
 
+
     for(auto &&it: a) cout<<it<<' ';
     cout<<endl;
     for(auto &&it: b) cout<<it<<' ';
     cout<<endl<<endl;
 
-    cout<<"here: "<<(a>=b)<<endl;
+    a.sort();
 
     for(auto &&it: a) cout<<it<<' ';
     cout<<endl;
